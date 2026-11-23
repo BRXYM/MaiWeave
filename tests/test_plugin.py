@@ -15,13 +15,16 @@ from maiweave.plugin import create_plugin
 
 
 @pytest.fixture
-async def plugin(tmp_path):
+async def plugin(tmp_path, request):
     plugin = create_plugin()
     store = Store(tmp_path / "maiweave.sqlite3")
     with store.db:
         store.put("runtime", {"id": "occupation", "name": "未设定", "setting": "", "rules": []})
     store.close()
     config = MaiWeaveConfig()
+    # 跨月测试会跳到指定日期，账单从用例指定的月份开始。
+    if getattr(request, "param", None) != "默认账单":
+        config.life.monthly_rent = config.life.monthly_utilities = 0
     config.life.autonomous = False
     config.world.weather_enabled = False
     plugin.set_plugin_config(config.model_dump())

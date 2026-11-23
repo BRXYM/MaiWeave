@@ -10,6 +10,19 @@ from test_plugin import plugin
 from test_proactive_modes import prepare
 
 
+@pytest.mark.parametrize("plugin", ["默认账单"], indirect=True)
+async def test_default_monthly_bills(plugin):
+    from maibot_sdk.config import rebuild_plugin_config_data
+
+    defaults = plugin.get_default_config()
+    for field, bill, amount in (("monthly_rent", "rent", 1600), ("monthly_utilities", "utilities", 180)):
+        assert defaults["life"][field] == amount
+        assert plugin.store.get("runtime", bill)["amount"] == amount
+    saved = {"life": {"monthly_rent": 0, "monthly_utilities": 0}}
+    rebuilt = rebuild_plugin_config_data(defaults, saved)
+    assert rebuilt["life"]["monthly_rent"] == rebuilt["life"]["monthly_utilities"] == 0
+
+
 async def test_groceries_cooking_and_leftovers(plugin):
     from maiweave.core.models import ActivityChoice
     from maiweave.core.wallet import Wallet
